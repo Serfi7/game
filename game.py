@@ -12,7 +12,7 @@ elfArcher=[250, 130, 0.4] #5 враг
 elfVarior=[400, 60, 0.6] #3 враг
 
 inventory=[] #heal=1, boostDamage=2, lightArmor(1.2)=3, middleArmor(1.5)=4, weightyArmor(1.7)=5
-me=[]
+me=[0, 0, 0]
 gold = 0
 raca = 0
 name = ""
@@ -43,13 +43,35 @@ def startGame():
 		gold = 500
 		inventory = []
 	else:
-		files = os.listdir()
-		if not("saves" in files):
-			print(Fore.RED + "Нет доступных сохранений!" + Style.RESET_ALL)
-			print("1)Вернуться")
-			action = int(input())
-			if action != 1: exit()
-			startGame()
+		print("0)Вернуться")
+		filesAtSaves = []
+		if os.path.exists("saves"):
+			filesAtSaves = os.listdir("saves")
+			if len(filesAtSaves) == 0: 
+				print(Fore.RED + "Нет сохранений!" + Style.RESET_ALL)
+				os.rmdir("saves")
+			else:
+				numberOfSaveInMenu = 1
+				for file in filesAtSaves:
+					print(str(numberOfSaveInMenu) + ")" + file)
+					numberOfSaveInMenu+= 1
+		else: 
+			print(Fore.RED + "Нет сохранений!" + Style.RESET_ALL)
+		filenumber = int(input())
+		if filenumber == 0 or filenumber > len(filesAtSaves): startGame()
+		fileName = filesAtSaves[filenumber - 1]
+		file = open('saves/'+fileName, "r")
+		content = file.read().split("\n")
+		file.close()
+		meLine = content[0].replace("[", "").replace("]", "").split(", ")
+		inventoryLine = content[1].replace("[", "").replace("]", "").split(", ")
+		gold = int(content[2])
+		name = content[3]
+		me[0] = int(meLine[0])
+		me[1] = int(meLine[1])
+		me[2] = float(meLine[2])
+		for i in range(len(inventoryLine)):
+			inventory.append(int(inventoryLine[i]))
 
 def doPurchase(good):
 	global gold
@@ -162,37 +184,43 @@ def saveGame():
 	global me
 	global inventory
 	global name
-	print("1)Новое сохранение")
+	os.system("cls")
+	print("0)Отмена\n1)Новое сохранение")
 	filesAtRoot = os.listdir()
 	hasSaves = "saves" in filesAtRoot
+	filesAtSaves = []
 	if hasSaves:
 		filesAtSaves = os.listdir("saves")
 		if len(filesAtSaves) == 0: 
 			hasSaves = False
 			os.rmdir("saves")
-	if not hasSaves: print(Fore.RED + "Нет сохранений!" + Style.RESET_ALL)
-	else:
-		os.chdir("saves")
-		filesAtSaves = os.listdir()
-		numberOfSaveInMenu = 2
-		for file in filesAtSaves:
-			print(str(numberOfSaveInMenu) + ")" + file)
-			numberOfSaveInMenu+= 1
+		else:
+			os.chdir("saves")
+			numberOfSaveInMenu = 2
+			for file in filesAtSaves:
+				print(str(numberOfSaveInMenu) + ")" + file)
+				numberOfSaveInMenu+= 1
+	if not hasSaves: 
+		print(Fore.RED + "Нет сохранений!" + Style.RESET_ALL)
 	action = int(input())
-	if action == 1:
+	if action == 0 or action - 2 > len(filesAtSaves): 
+		os.chdir("..")
+		return		
+	elif action == 1:
 		if not hasSaves: 
 			os.mkdir("saves")
 			os.chdir("saves")
 		filename = str(datetime.datetime.today().replace(microsecond = 0)).replace(":", "-") + ".txt"
-		#filename = str(filename).replace(":", "-")
-		#filename.replace(":", "-")
 		saveFile = open(filename, "w")
-		print(me)
-		print(inventory)
-		print(str(gold))
-		print(name)
-		saveFile.write(me + "\n" + inventory + "\n" + str(gold) + "\n" + name)
+		saveFile.write(str(me) + "\n" + str(inventory) + "\n" + str(gold) + "\n" + name)
 		saveFile.close()
+	else:
+		fileNumber = action - 2
+		filename = filesAtSaves[fileNumber]
+		saveFile = open(filename, "w")
+		saveFile.write(str(me) + "\n" + str(inventory) + "\n" + str(gold) + "\n" + name)
+		saveFile.close()
+	os.chdir("..")
 
 
 leaveGame = False
